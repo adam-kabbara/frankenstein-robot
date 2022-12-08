@@ -47,14 +47,14 @@ def handel_command(command):
 
 def to_third_pov(text):
     return text.replace("your", "his").replace("you", "he").replace("are", "is")\
-        .replace("you", "he").replace("do", "does").replace("he does", "he do")
+        .replace("do", "does").replace("he does", "he do")
 
 def get_gpt3_response(question):
-#TODO
+    print(f"usr quesiton: {question}\n")
     if question.lower().startswith("ram: "): # repeate after me
         robot_response = question[5:]
     else:                                   # format question to send to openai
-        converted_question = f"ask Frankenstein's monster {to_third_pov(question[8:])}" #todo
+        converted_question = f"ask Frankenstein's monster {to_third_pov(question).lower()}" #todo
         print(f"converted question: {converted_question}\n")
         # ask question
         res = json.loads(str(openai.Completion.create(
@@ -67,7 +67,7 @@ def get_gpt3_response(question):
         gpt3_response = res['choices'][0]['text'].strip() # gpt3 response
         print(f"gpt3 response: {gpt3_response}\n")
 
-        if gpt3_response.lower().contains("frankenstein's monster"):
+        if "frankenstein's monster" in gpt3_response.lower():
         # Convert ans from third person to first person
             res = json.loads(str(openai.Completion.create(
                 model="text-davinci-003",
