@@ -6,10 +6,11 @@ import private
 
 app = Flask(__name__)
 socketio = SocketIO(app)
+socket_ids = {}
 openai.organization = private.organization
 openai.api_key = private.key
 
-# flask routes
+# ---------------- flask routes ----------------
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -26,24 +27,19 @@ def control():
 @app.route("/ai", methods=["GET", "POST"])
 def ai():
     if request.method == "GET":
-        return render_template("ai.html")
+        return render_template("ai.html", res="null")
     elif request.method == "POST":
         text = request.form['question']
-        handle_ai_question(text) #TODO add tkinter window on server so students can see qustions and ans
-        return redirect(url_for("ai"))
+        res = handle_ai_question(text) #TODO add tkinter window on server so students can see qustions and ans
+        return render_template("ai.html", res=res)
 
-# event handlers
+# ---------------- event handlers ----------------
 def handel_command(command):
     print(command)
-    if command["status"] == "pressed":
-        socketio.emit('message', {'data': 'hghgghghgh'})
-    elif command["status"] == "released":
-        pass
-    elif command["status"] == "clicked":
-        pass
+    if "scene-btn" in command["id"]:
+        socketio.emit("messages", {"function":"scene-control", command["status"]: command["id"]}, room=socket_ids["screen"])
     else:
-        raise Exception("!!!Unidentified status call!!!")
-
+        socketio.emit("message", {"function":"motor-control", command["status"]: command["id"]}, room=socket_ids["rp4"])
 
 def to_third_pov(text):
     return text.replace("your", "his").replace("you", "he").replace("are", "is")\
@@ -82,18 +78,24 @@ def get_gpt3_response(question):
 
 def handle_ai_question(question):
     ans = get_gpt3_response(question)
-    socketio.emit('message', {'data': 'hghgghghgh'})
+    print(question)
+    socketio.emit("messages", {"fucnction": "speak","text": ans}, room=socket_ids["screen"])
+    return ans
 
-# SOCKET ROUTS  
+
+# ---------------- socket routes ----------------
 @socketio.on('message')
-def handle_message(data):
+def socket_message(data):
     print(f"received message: {data}")
+    if "device-name" in data:
+        socket_ids[data["device-name"]] = request.sid
+        print(socket_ids)
 
 @socketio.on('connect')
-def connect():
+def socket_connection():
     print("got a connection")
     emit('message', {'data': 'Connected'})
 
 
 if __name__ == "__main__":
-    socketio.run(app, port=5000, debug=True, host="localhost")
+    socketio.run(app, port=5000, debug=True, host="192.168.2.14")

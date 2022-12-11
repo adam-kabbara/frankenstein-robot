@@ -27,7 +27,7 @@ let hold_press_btns = [
     move_right_btn, move_down_btn, move_left_btn, move_up_btn];
 let click_press_btns = [
     flex_btn, reset_btn, sit_btn, control_left_btn, both_btn, control_right_btn,
-    prev_scene_btn, step_btn, left_hand_btn, right_hand_btn, wave_btn]
+    prev_scene_btn, next_scene_btn, step_btn, left_hand_btn, right_hand_btn, wave_btn]
 
 hold_press_btns.concat(click_press_btns).forEach((btn)=>{
     let timerID;
@@ -47,16 +47,19 @@ hold_press_btns.concat(click_press_btns).forEach((btn)=>{
     function notPressingDown(e) {
         cancelAnimationFrame(timerID);
         counter = 0;
-        btn.classList.remove("glow");
-        if (hold_press_btns.includes(btn)){
-            send_btn_command("released", btn.id);
-            console.log("sent released message");
+        if (btn.classList.contains("glow")){//if the button has been pressed (mouse down)
+            console.log("logic");
+            if (hold_press_btns.includes(btn)){
+                send_btn_command("released", btn.id);
+                console.log("sent released message");
+            }
+            else if (click_press_btns.includes(btn)) {
+                send_btn_command("clicked", btn.id);
+                console.log("sent click message");
+            }
+            btn.classList.remove("glow");
+            update_html_btn_click(btn.id);
         }
-        else if (click_press_btns.includes(btn)) {
-            send_btn_command("clicked", btn.id);
-            console.log("sent click message");
-        }
-        update_html_btn_click(btn.id);
     }
 
     function timer() {
@@ -73,6 +76,15 @@ hold_press_btns.concat(click_press_btns).forEach((btn)=>{
 });
 
 function send_btn_command(status, elem_id){
+    if (elem_id == right_hand_btn.id){ // robot can only contract right hand rn 
+        if (right_hand_btn.children[1].innerText.toLowerCase() == "open right"){
+            elem_id = "open-right-hand"
+        }
+        else{
+            elem_id = "close-right-hand"
+        }
+    }
+
     fetch("/control", {
         method: "POST",
         headers: {"Content-type": "application/json"},
